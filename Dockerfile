@@ -2,45 +2,29 @@
 
 FROM biocontainers/biocontainers:v1.1.0_cv2
 
-################## METADATA ######################
+# set the environment variables
+ENV star_version 2.7.0e
 
-LABEL base_image="biocontainers:v1.1.0_cv2"
-LABEL version="2"
-LABEL software="bowtie2"
-LABEL software.version="2.4.1"
-LABEL about.summary="an ultrafast memory-efficient short read aligner"
-LABEL about.home="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml"
-LABEL about.documentation="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml"
-LABEL about.license_file="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml"
-LABEL about.license="SPDX:Artistic-2.0"
-LABEL extra.identifiers.biotools="bowtie2"
-LABEL about.tags="Genomics"
-LABEL extra.binaries="bowtie2"
+# run update and install necessary tools
+RUN apt-get update -y && apt-get install -y \
+    build-essential \
+    vim \
+    less \
+    curl \
+    libnss-sss \
+    zlib1g-dev
 
-################## MAINTAINER ######################
-MAINTAINER Alvin Chen <ychen@aperiomics.com>
+# download and install star
+WORKDIR /usr/local/bin/
+RUN curl -SL https://github.com/alexdobin/STAR/archive/${star_version}.tar.gz \
+    | tar -zxvC /usr/local/bin/
+WORKDIR /usr/local/bin/STAR-${star_version}/source/
+RUN make STAR
+RUN ln -s /usr/local/bin/STAR-${star_version}/bin/Linux_x86_64/STAR /usr/local/bin/STAR
+RUN ln -s /usr/local/bin/STAR-${star_version}/bin/Linux_x86_64/STARlong /usr/local/bin/STARlong
+WORKDIR /usr/local/bin/
 
-################## INSTALLATION ######################
-ENV ZIP=bowtie2-2.4.1-linux-x86_64.zip
-ENV URL=https://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.4.1
-ENV FOLDER=bowtie2-2.4.1-linux-x86_64
-ENV DST=/home/biodocker/bin
-ENV ULOCAL=/usr/local/bin
+COPY star_wrapper.sh /bin
+RUN chmod +x /bin/star_wrapper.sh
 
-USER 0
-
-RUN wget $URL/$ZIP/download -O $DST/$ZIP && \
-    unzip $DST/$ZIP -d $DST && \
-    rm $DST/$ZIP && \
-    mv $DST/$FOLDER/* $DST && \
-    rmdir $DST/$FOLDER
-
-RUN apt update
-RUN apt install python3 -y
-
-RUN ln -s $DST/* $ULOCAL/
-
-COPY bowtie2_wrapper.sh /bin
-RUN chmod +x /bin/bowtie2_wrapper.sh
-
-ENTRYPOINT ["/bin/bowtie2_wrapper.sh"]
+ENTRYPOINT ["/bin/star_wrapper.sh"]
