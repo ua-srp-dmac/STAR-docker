@@ -12,7 +12,7 @@ EOF
     exit 0
 }
 
-while getopts "f:p:t:hg:r:" opt; do
+while getopts "f:p:t:hg:r:o:" opt; do
   case ${opt} in
     f)
       if [ -z "$read_files" ]
@@ -43,6 +43,9 @@ while getopts "f:p:t:hg:r:" opt; do
     r)
       read_files_command=$OPTARG
       ;;
+    o)
+      sjdbOverhang=$OPTARG
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       exit 1
@@ -57,7 +60,7 @@ done
 echo "$read_files"
 echo "$paired_files"
 
-command="STAR --quantMode GeneCounts --genomeDir $genome_dir --readFilesIn $read_files"
+command="STAR --quantMode GeneCounts --genomeDir $genome_dir --sjdbOverhang $sjdbOverhang --readFilesIn $read_files"
 
 if [ -n "$paired_files" ]
 then
